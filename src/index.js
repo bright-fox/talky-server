@@ -1,16 +1,37 @@
 import express from "express"
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import mongoose from "mongoose"
+import bodyParser from "body-parser"
+import http from "http"
+import socketIO from "socket.io"
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+import authRoutes from "./routes/auth.js"
+
+const PORT = process.env.PORT || 4001
 
 const app = express()
 
-app.get("/", (req, res) => {
-    res.sendFile(__dirname + '/index.html')
+// socket configurations
+const server = http.createServer(app)
+const io = socketIO(server)
+
+// MongoDB connection
+mongoose.connect(process.env.DB_URI || "mongodb://localhost:27017/talky_api", { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true })
+mongoose.set("useFindAndModify", false);
+
+// middlewares
+app.use(bodyParser.json())
+
+// routes
+app.use("/", authRoutes)
+
+io.on("connection", (socket) => {
+    socket.on("chatMessage", msg => {
+        io.emit("message", msg) // socket.broadcast to exclude the person
+    })
 })
 
-app.listen(3000, () => {
-    console.log("Server is running on port 3000")
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`)
 })
