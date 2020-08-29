@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 
 import authRoutes from "./routes/auth.js"
+import { errorMiddleware } from "./middlewares/error.js"
 
 // use environment variables from .env
 dotenv.config()
@@ -24,11 +25,13 @@ const io = socketIO(server)
 mongoose.connect(process.env.DB_URI || "mongodb://localhost:27017/talky_api", { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true })
 mongoose.set("useFindAndModify", false)
 
-// middlewares
 app.use(bodyParser.json())
 
 // routes
 app.use("/", authRoutes)
+
+// middlewares
+app.use(errorMiddleware)
 
 io.on("connection", (socket) => {
     socket.on("chatMessage", msg => {
