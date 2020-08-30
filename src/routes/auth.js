@@ -2,8 +2,8 @@ import express from 'express'
 import User from "../models/user.js"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
-import _ from "lodash"
 import CustomError from '../util/CustomError.js'
+import { asyncHandler } from "../util/index.js"
 
 const router = express.Router()
 
@@ -20,8 +20,8 @@ router.post("/signup", asyncHandler(async (req, res) => {
     const payload = { id: savedUser._id, username: savedUser.username, bubbleColor: savedUser.bubbleColor, textColor: savedUser.textColor }
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: expirationDuration })
 
-    res.status(200).json({ user: payload, accessToken })
-}))
+    return res.status(200).json({ user: payload, accessToken })
+}));
 
 router.post("/login", asyncHandler(async (req, res) => {
     const { username, password } = req.body
@@ -36,7 +36,7 @@ router.post("/login", asyncHandler(async (req, res) => {
     const payload = { id: user._id, username: user.username, bubbleColor: user.bubbleColor, textColor: user.textColor }
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: expirationDuration })
 
-    res.status(200).json({ user: payload, accessToken })
-}))
+    return res.status(200).json({ user: payload, accessToken })
+}));
 
 export default router
