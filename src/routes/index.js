@@ -1,6 +1,6 @@
 import express from "express"
-import { asyncHandler } from "../util"
-import Chatroom from "../models/chatroom"
+import { asyncHandler } from "../util/index.js"
+import Chatroom from "../models/chatroom.js"
 
 const router = express.Router()
 
