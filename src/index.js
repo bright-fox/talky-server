@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 
 import authRoutes from "./routes/auth.js"
+import indexRoutes from "./routes/index.js"
 import { errorMiddleware, loggerMiddleware, errorLoggerMiddleware } from "./middlewares/index.js"
 import Chatroom from "./models/chatroom.js"
 
@@ -36,6 +37,7 @@ app.use(cors({
 app.use(loggerMiddleware)
 
 // routes
+app.use("/", indexRoutes)
 app.use("/", authRoutes)
 
 // middlewares
