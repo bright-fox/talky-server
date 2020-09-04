@@ -11,6 +11,7 @@ import { dirname } from 'path'
 
 import authRoutes from "./routes/auth.js"
 import { errorMiddleware, loggerMiddleware, errorLoggerMiddleware } from "./middlewares/index.js"
+import Chatroom from "./models/chatroom.js"
 
 // use environment variables from .env
 dotenv.config()
@@ -42,16 +43,36 @@ app.use(errorLoggerMiddleware)
 app.use(errorMiddleware)
 
 io.on("connection", (socket) => {
+    // join chatroom
+    socket.on("joinRoom", ({ roomName, accessToken }) => {
+        jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, async (err, user) => {
+            if (err) return // maybe emit error
+            socket.join(roomName)
+
+            // check if user is already in the room
+            const isAlreadyInChatroom = await Chatroom.exists({ roomName, username: user.username })
+
+            // create new member in chatroom for every socket
+            const membership = new Chatroom({ roomName, username: user.username, socketID: socket.id })
+            const savedMembership = await membership.save()
+
+            // emit new memberlist if it is a new user
+            if (isAlreadyInChatroom) return
+            const members = await Chatroom.distinct("username", { roomName }).exec()
+            // io.to(roomName).emit("userJoined", { username: user.username })
+            io.to(roomName).emit("updateMembers", { members })
+        })
+    })
+
+    // handle sent messages
     socket.on("chatMessage", ({ message, accessToken }) => {
         // check if accesstoken is valid
-        jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, async (err, payload) => { // change into async await syntax
+        jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, async (err, user) => {
             if (err) return // maybe it will close the connection
 
-            console.log(payload)
-            const msg = { text: message, time: new Date().toISOString(), user: payload }
+            const msg = { text: message, time: new Date().toISOString(), user }
             io.emit("message", msg) // socket.broadcast to exclude the person
         })
-
     })
 })
 
