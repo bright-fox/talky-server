@@ -76,6 +76,19 @@ io.on("connection", (socket) => {
             io.emit("message", msg) // socket.broadcast to exclude the person
         })
     })
+
+    // handle disconnection
+    socket.on("disconnect", async () => {
+        const member = await Chatroom.findOne({ socketID: socket.id }).exec()
+        await member.remove()
+
+        // check if the user disconnected on all tabs/devices
+        const stillConnected = await Chatroom.exists({ roomName: member.roomName, username: member.username })
+        if (!stillConnected) {
+            const members = await Chatroom.distinct("username", { roomName: member.roomName }).exec()
+            io.to(member.roomName).emit("updateMembers", { members })
+        }
+    })
 })
 
 server.listen(PORT, () => {
